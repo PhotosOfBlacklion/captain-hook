@@ -13,6 +13,8 @@ hook.are_we_running?
 
 @logger.info('In the forked process')
 photo_paths = hook.get_photo_paths
+exit if photo_paths.empty?
+
 photo_paths.each do |photo|
   @logger.info("#{photo}")
   hook.extract_parts(photo)
