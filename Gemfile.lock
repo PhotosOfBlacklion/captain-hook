@@ -1,0 +1,38 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    aws-sdk (2.6.47)
+      aws-sdk-resources (= 2.6.47)
+    aws-sdk-core (2.6.47)
+      aws-sigv4 (~> 1.0)
+      jmespath (~> 1.0)
+    aws-sdk-resources (2.6.47)
+      aws-sdk-core (= 2.6.47)
+    aws-sigv4 (1.0.0)
+    dotenv (2.1.2)
+    jmespath (1.3.1)
+    logger (1.2.8)
+    mysql2 (0.4.5)
+    rack (1.6.5)
+    rack-protection (1.5.3)
+      rack
+    rmagick (2.16.0)
+    sinatra (1.4.7)
+      rack (~> 1.5)
+      rack-protection (~> 1.4)
+      tilt (>= 1.3, < 3)
+    tilt (2.0.5)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  aws-sdk (~> 2)
+  dotenv
+  logger
+  mysql2
+  rmagick
+  sinatra
+
+BUNDLED WITH
+   1.13.7
