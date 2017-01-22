@@ -13,7 +13,11 @@ hook.are_we_running?
 
 @logger.info('In the forked process')
 photo_paths = hook.get_photo_paths
-exit if photo_paths.empty?
+
+if photo_paths.empty?
+  @logger.info('Nothing to process, exiting')
+  exit
+end
 
 photo_paths.each do |photo|
   @logger.info("#{photo}")
