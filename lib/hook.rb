@@ -173,11 +173,22 @@ class Hook
   end
 
   def commit
-    g = Rugged::Repository.new(@pages_dir)
-    g.config('user.name', 'Captain Hook')
-    g.config('user.email', 'hook@mikegriffin.ie')
-    g.add(album_name)
-    g.commit("Adds #{filename}")
-    g.push
+    repo = Rugged::Repository.new(@pages_dir)
+    index = repo.index
+    index.add(path: album_name,
+              oid: (Rugged::Blob.from_workdir repo, album_name),
+              mode: 0100644
+             )
+    commit_tree = index.write_tree(repo)
+    index.write
+    commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
+    Rugged::Commit.create(repo,
+                          author: commit_author,
+                          committer: commit_author,
+                          message: "Adds #{title}",
+                          parents: [repo.head.target],
+                          tree: commit_tree,
+                          update_ref: 'HEAD'
+                         )
   end
 end
