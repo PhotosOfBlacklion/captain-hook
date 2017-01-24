@@ -3,7 +3,8 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'json'
-require File.expand_path('../lib', __FILE__)
+require File.expand_path('../lib/hook', __FILE__)
+require 'rugged'
 
 @logger = Logger.new('captain-hook.log', 'daily')
 @logger.level = Logger::INFO
@@ -28,8 +29,8 @@ photo_paths.each do |photo|
   hook.create_thumbnail(photo)
   hook.copy_to_s3(photo)
   hook.delete_temp_files(photo)
-  hook.add_photo(photo)
+  hook.add_photo
 end
 
 hook.create_jekyll_page
-
+hook.commit

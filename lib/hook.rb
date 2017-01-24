@@ -67,7 +67,8 @@ class Hook
     File.delete(filename, "t_#{filename}")
   end
 
-  def add_photo(original)
+  def add_photo
+    original = "#{year}/#{month}/#{slug}"
     @logger.info("Adding the processed photo (#{original}) to the array")
     @photos.push [ 'original' => original, 'thumbnail' => "/t#{original}", 'title' => @filename ]
     sql = "UPDATE files SET processed = true WHERE path = \"#{original}\""
@@ -173,10 +174,11 @@ class Hook
   end
 
   def commit
-    repo = Rugged::Repository.new(@pages_dir)
+    /(?<commit_file>_posts\/.*)/ =~ album_name
+    repo = Rugged::Repository.discover(@pages_dir)
     index = repo.index
-    index.add(path: album_name,
-              oid: (Rugged::Blob.from_workdir repo, album_name),
+    index.add(path: commit_file,
+              oid: (Rugged::Blob.from_workdir(repo, commit_file)),
               mode: 0100644
              )
     commit_tree = index.write_tree(repo)
@@ -190,5 +192,7 @@ class Hook
                           tree: commit_tree,
                           update_ref: 'HEAD'
                          )
+    credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
+    repo.push('origin', ['refs/heads/master'], {credentials: credentials})
   end
 end
