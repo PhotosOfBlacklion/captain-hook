@@ -4,6 +4,7 @@ require 'logger'
 require 'mysql2'
 require 'net/http'
 require 'rmagick'
+require 'rugged'
 require 'uri'
 require 'yaml'
 
@@ -169,5 +170,14 @@ class Hook
       end
       f.puts '---'
     end
+  end
+
+  def commit
+    g = Rugged::Repository.new(@pages_dir)
+    g.config('user.name', 'Captain Hook')
+    g.config('user.email', 'hook@mikegriffin.ie')
+    g.add(album_name)
+    g.commit("Adds #{filename}")
+    g.push
   end
 end
