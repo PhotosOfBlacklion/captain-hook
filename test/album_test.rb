@@ -25,4 +25,8 @@ class AlbumTest < CaptainHook::Test
   def test_title
     assert @album.title == "Mike Test", "The album title is wrong"
   end
+
+  def test_filename
+    assert @album.filename == "../PhotosOfBlacklion.github.io/_posts/2017-01-17-mike-test.md", "The album filename is wrong"
+  end
 end
