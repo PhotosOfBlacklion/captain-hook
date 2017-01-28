@@ -10,14 +10,16 @@ GEM
       aws-sdk-core (= 2.6.47)
     aws-sigv4 (1.0.0)
     dotenv (2.1.2)
-    git (1.3.0)
     jmespath (1.3.1)
     logger (1.2.8)
+    minitest (5.10.1)
     mysql2 (0.4.5)
     rack (1.6.5)
     rack-protection (1.5.3)
       rack
+    rake (12.0.0)
     rmagick (2.16.0)
+    rugged (0.25.1.1)
     sinatra (1.4.7)
       rack (~> 1.5)
       rack-protection (~> 1.4)
@@ -30,10 +32,12 @@ PLATFORMS
 DEPENDENCIES
   aws-sdk (~> 2)
   dotenv
-  git
   logger
+  minitest
   mysql2
+  rake
   rmagick
+  rugged
   sinatra
 
 BUNDLED WITH
