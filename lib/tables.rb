@@ -9,7 +9,7 @@ class Dropbox
   include DataMapper::Resource
 
   property :id,         Serial
-  property :path,       String
+  property :path,       String,   :length => 255
   property :processed,  Boolean,  :default => false
   property :created_at, DateTime
   property :updated_at, DateTime
