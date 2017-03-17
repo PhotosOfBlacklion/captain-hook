@@ -63,7 +63,7 @@ post '/' do
   json = JSON.parse(resp_body.gsub('=>', ':'))
   json['entries'].each do |entries|
     if entries['.tag'] == 'file' && entries['path_lower'][-3..-1] == 'jpg'
-      file = Dropbox.create(
+      file = Dropbox.first_or_create(
         :path       => entries['path_lower'],
         :created_at => Time.now,
         :updated_at => Time.now
@@ -78,4 +78,33 @@ post '/' do
   end
   logger.info('Dropbox webhook finished')
   ''
+end
+
+get '/connect' do
+  erb :connect
+end
+
+get '/login' do
+  params = {
+    :response_type => 'token',
+    :client_id => ENV['APP_KEY'],
+    :redirect_uri => url('oauth_callback')
+  }
+  query = params.map { |k, v| "#{k.to_s}=#{CGI.escape(v.to_s)}" }.join '&'
+  redirect "https://www.dropbox.com/1/oauth2/authorize?#{query}"
+end
+
+get '/oauth_callback' do
+  if params.has_key? 'error'
+    # uh oh
+    halt 401
+  end
+
+  token = params['access_token']
+  user = params['account_id']
+  Token.create(
+    :user  => user,
+    :token => token,
+    :created_at => Time.now
+  )
 end
