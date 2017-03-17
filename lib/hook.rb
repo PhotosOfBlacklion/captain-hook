@@ -117,7 +117,7 @@ class Hook
 
     request['Content-Type'] = ''
     request['Authorization'] = "Bearer #{ENV['DROPBOX_ACCESS_TOKEN']}"
-    request['Dropbox-API-Arg'] = '{"path":"/' + source + '"}'
+    request['Dropbox-API-Arg'] = '{"path":"' + source + '"}'
 
     response = http.request(request)
 
@@ -128,7 +128,7 @@ class Hook
 
   def delete(path)
     @logger.info("Deleting the photo from Dropbox")
-    body = { path: "/#{path}" }
+    body = { path: "#{path}" }
     url = 'https://api.dropboxapi.com/2/files/delete'
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
