@@ -1,19 +1,26 @@
 require 'aws-sdk'
 require 'dotenv'
 require 'logger'
-require 'mysql2'
 require 'net/http'
 require 'rmagick'
 require 'rugged'
 require 'uri'
 require 'yaml'
+require File.expand_path('../tables', __FILE__)
+require File.expand_path('../album', __FILE__)
+require File.expand_path('../photo', __FILE__)
 
 include Magick
 
 class Hook
+  def self.run!(options)
+    Server.new(options).run!
+  end
+
   def initialize
     Dotenv.load
 
+    @pidfile = './captain-hook.pid'
     @photos = []
     @logger = Logger.new('captain-hook.log', 'daily')
     @logger.level = Logger::INFO
@@ -22,66 +29,85 @@ class Hook
     @bucket = 'photos-of-blacklion'
     @pages_dir = '../PhotosOfBlacklion.github.io/_posts'
 
-    @mysql = Mysql2::Client.new(
-      :host => 'localhost',
-      :username => 'hook',
-      :password => ENV['MYSQL_PASSWORD'],
-      :database => 'hooks'
-    )
   end
 
-  def are_we_running?
-    @pidfile = './captain-hook.pid'
-    if File.exists?(@pidfile)
-      @logger.info("Exiting because I'm already running")
-      exit
+  def run!
+    check_pid
+    write_pid
+
+    while file = get_file
+      album = Album.new(file.path)
+      photo = Photo.new(file.path)
+
+      download(file.path, photo.title)
+      delete(file.path)
+      create_thumbnail(photo.title)
+      copy_to_s3(photo)
+      delete_temp_files(photo.title)
+      add_photo(album, photo)
     end
-    File.open(@pidfile, ::File::CREAT | ::File::EXCL | ::File::WRONLY) { |f| f.write("#{Process.pid}") }
-    at_exit { File.delete(@pidfile) if File.exists?(@pidfile) }
   end
 
-  def get_photo_paths
-    @logger.info("Getting the photo paths")
-    sql = "SELECT path FROM files WHERE processed = FALSE"
-    result = []
-    @mysql.query(sql).each do |row|
-      result << row['path']
+  def write_pid
+    begin
+      File.open(@pidfile, ::File::CREAT | ::File::EXCL | ::File::WRONLY){|f| f.write("#{Process.pid}") }
+      at_exit { File.delete(@pidfile) if File.exists?(@pidfile) }
+    rescue Errno::EEXIST
+      check_pid
+      retry
     end
-    return result
   end
 
-  def extract_parts(photo_path)
-    @logger.info("Extracting the year, months, day and slug")
-    directory = photo_path.split('/')[1]
-    @filename = photo_path.split('/')[2]
-    /(?<year>\d\d\d\d)-(?<month>\d\d)-(?<day>\d\d)-(?<slug>.*)/ =~ directory
-    @year = year
-    @month = month
-    @day = day
-    @slug = slug
+  def check_pid
+    case pid_status(@pidfile)
+    when :running, :not_owned
+      puts "A server is already running. Check #{@pidfile}"
+      exit(1)
+    when :dead
+      File.delete(@pidfile)
+    end
+  end
+
+  def pid_status(pidfile)
+    return :exited unless File.exists?(pidfile)
+    pid = ::File.read(pidfile).to_i
+    return :dead if pid == 0
+    Process.kill(0, pid)      # check process status
+    :running
+  rescue Errno::ESRCH
+    :dead
+  rescue Errno::EPERM
+    :not_owned
+  end
+
+  def get_file
+    Dropbox.first(:processed => false)
   end
 
   def delete_temp_files(photo)
     @logger.info("Deleting local temporary files")
-    filename = photo.split('/')[2]
-    File.delete(filename, "t_#{filename}")
+    File.delete(photo, "t_#{photo}")
   end
 
-  def add_photo
-    original = "#{year}/#{month}/#{slug}"
-    @logger.info("Adding the processed photo (#{original}) to the array")
-    @photos.push [ 'original' => original, 'thumbnail' => "/t#{original}", 'title' => @filename ]
-    sql = "UPDATE files SET processed = true WHERE path = \"#{original}\""
-    @mysql.query(sql)
+  def add_photo(album, photo)
+    if album.exists?
+    else
+      File.open(album.filename, 'w') do |f|
+        f.puts "---"
+        f.puts "title: #{album.title}"
+        f.puts "date: #{album.date}"
+        f.puts "thumbnail: #{photo.thumbnail}"
+        f.puts "photos:"
+        f.puts "  - original: #{photo.original}"
+        f.puts "    thumbnail: #{photo.thumbnail}"
+        f.puts "    title: #{photo.title}"
+        f.puts '---'
+      end
+    end
   end
 
-  def album_name
-    @logger.info("Creating the album filename")
-    "#{@pages_dir}/#{@year}-#{@month}-#{@day}-#{@slug}.md"
-  end
-
-  def download(path)
-    @logger.info("Downloading and saving #{path} to be worked on")
+  def download(source, target)
+    @logger.info("Downloading and saving #{source} to be worked on")
     url = 'https://content.dropboxapi.com/2/files/download'
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
@@ -91,18 +117,18 @@ class Hook
 
     request['Content-Type'] = ''
     request['Authorization'] = "Bearer #{ENV['DROPBOX_ACCESS_TOKEN']}"
-    request['Dropbox-API-Arg'] = '{"path":"' + path +'"}'
+    request['Dropbox-API-Arg'] = '{"path":"/' + source + '"}'
 
     response = http.request(request)
 
-    File.open(@filename, 'w') do |f|
+    File.open(target, 'w') do |f|
       f.puts response.body
     end
   end
 
   def delete(path)
     @logger.info("Deleting the photo from Dropbox")
-    body = { path: path }
+    body = { path: "/#{path}" }
     url = 'https://api.dropboxapi.com/2/files/delete'
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
@@ -119,41 +145,21 @@ class Hook
 
   def create_thumbnail(photo)
     @logger.info("Creating the thumbnail")
-    filename = photo.split('/')[2]
-    img = ImageList.new(filename)
+    img = ImageList.new(photo)
     thumb = img.change_geometry('200^') { |cols, rows, img|
       img.resize!(cols, rows)
     }.crop(CenterGravity, 0,0,200,200)
-    thumb.write("t_#{filename}")
+    thumb.write("t_#{photo}")
   end
 
   def copy_to_s3(photo)
-    filename = photo.split('/')[2]
-    path = "#{@year}/#{@month}/#{@slug}/#{filename}"
-    @logger.info("Copying #{filename} to s3://#{@bucket}/#{path}.")
+    @logger.info("Copying #{photo.title} to s3://#{@bucket}/#{photo.s3_path}.")
     s3 = Aws::S3::Resource.new(region: 'eu-west-1')
-    obj = s3.bucket(@bucket).object(path)
-    obj.upload_file(filename)
-    @logger.info("Copying t_#{filename} to s3://#{@bucket}/t/#{path}.")
-    obj = s3.bucket(@bucket).object("t/#{path}")
-    obj.upload_file("t_#{filename}")
-  end
-
-  def title
-    @logger.info("Title casing the title again")
-    @slug.gsub(/\//, '-').gsub(/-/, ' ').gsub(/\w+/) do |word|
-      word.capitalize
-    end
-  end
-
-  def date
-    @logger.info("Getting the date for the album")
-    "#{@year}-#{@month}-#{@day} 12:00"
-  end
-
-  def thumbnail
-    @logger.info("Getting the album thumbnail")
-    @photos.flatten.first['thumbnail']
+    obj = s3.bucket(@bucket).object(photo.s3_path)
+    obj.upload_file(photo.title)
+    @logger.info("Copying t_#{photo.title} to s3://#{@bucket}/t/#{photo.s3_path}.")
+    obj = s3.bucket(@bucket).object("t/#{photo.s3_path}")
+    obj.upload_file("t_#{photo.title}")
   end
 
   def create_jekyll_page

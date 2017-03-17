@@ -7,8 +7,8 @@ require 'json'
 require 'dotenv'
 require 'net/http'
 require 'uri'
-require 'mysql2'
 require 'logger'
+require File.expand_path('../lib/tables', __FILE__)
 
 set :bind, '0.0.0.0'
 Dotenv.load
@@ -16,13 +16,6 @@ Dotenv.load
 logger = Logger.new('captain-hook.log', 'daily')
 logger.level = Logger::INFO
 logger.datetime_format = '%Y-%m-%d %H:%M:%S'
-
-mysql = Mysql2::Client.new(
-  :host => 'localhost',
-  :username => 'hook',
-  :password => ENV['MYSQL_PASSWORD'],
-  :database => 'hooks'
-)
 
 helpers do
   def valid_dropbox_request?(message)
@@ -45,6 +38,12 @@ post '/' do
   halt 400, 'Missing X-Dropbox-Signature' unless env['HTTP_X_DROPBOX_SIGNATURE']
   halt 403 unless valid_dropbox_request?(request.body.read)
 
+  request.body.rewind
+  req_body = JSON.parse(request.body.read)
+
+  account = req_body['list_folder']['accounts'].first
+  token = Token.first(:user => account)
+
   logger.info('Dropbox webhook fired')
   body = { path: '', recursive: true }
   url = 'https://api.dropboxapi.com/2/files/list_folder'
@@ -56,7 +55,7 @@ post '/' do
   request.body = body.to_json
 
   request['Content-Type'] = 'application/json'
-  request['Authorization'] = "Bearer #{ENV['DROPBOX_ACCESS_TOKEN']}"
+  request['Authorization'] = "Bearer #{token}"
 
   response = http.request(request)
 
@@ -64,10 +63,12 @@ post '/' do
   json = JSON.parse(resp_body.gsub('=>', ':'))
   json['entries'].each do |entries|
     if entries['.tag'] == 'file' && entries['path_lower'][-3..-1] == 'jpg'
-      time = Time.now.strftime('%Y-%m-%d %H:%M:%S')
-      sql = "INSERT IGNORE INTO files (path,created_at,updated_at) VALUES ('#{entries['path_lower']}', '#{time}', '#{time}')"
-      logger.info("Query: #{sql}")
-      mysql.query(sql)
+      file = Dropbox.create(
+        :path       => entries['path_lower'],
+        :created_at => Time.now,
+        :updated_at => Time.now
+      )
+      logger.info("#{entries['path_lower']} added to the database")
     end
   end unless json['entries'].empty?
 
