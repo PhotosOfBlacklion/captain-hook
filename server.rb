@@ -64,9 +64,9 @@ post '/' do
   json['entries'].each do |entries|
     if entries['.tag'] == 'file' && entries['path_lower'][-3..-1] == 'jpg'
       file = Dropbox.first_or_create(
-        :path       => entries['path_lower'],
-        :created_at => Time.now,
-        :updated_at => Time.now
+        {:path       => entries['path_lower']},
+        {:created_at => Time.now,
+        :updated_at => Time.now}
       )
       logger.info("#{entries['path_lower']} added to the database")
     end
