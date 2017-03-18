@@ -9,9 +9,10 @@ gem 'rmagick'
 gem 'rugged'
 gem 'data_mapper'
 gem 'dm-mysql-adapter'
+gem 'unicorn'
 
 group :test do
   gem 'rake'
-  gem "minitest"
+  gem 'minitest'
   gem 'dm-sqlite-adapter'
 end
