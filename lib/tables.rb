@@ -3,7 +3,7 @@ require 'dotenv'
 
 Dotenv.load
 
-DataMapper.setup(:default, "mysql://hook:#{ENV['MYSQL_PASSWORD']}@localhost/hooks")
+DataMapper.setup(:default, "mysql://root@localhost/hooks")
 
 class Dropbox
   include DataMapper::Resource
@@ -18,8 +18,8 @@ class Token
   include DataMapper::Resource
 
   property :id,         Serial
-  property :user,       String
-  property :token,      String
+  property :user,       String,   :length => 255
+  property :token,      String,   :length => 255
   property :created_at, DateTime
 end
 DataMapper.finalize

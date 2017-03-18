@@ -86,7 +86,7 @@ end
 
 get '/login' do
   params = {
-    :response_type => 'token',
+    :response_type => 'code',
     :client_id => ENV['APP_KEY'],
     :redirect_uri => url('oauth_callback')
   }
@@ -100,11 +100,34 @@ get '/oauth_callback' do
     halt 401
   end
 
-  token = params['access_token']
-  user = params['account_id']
-  Token.create(
-    :user  => user,
-    :token => token,
-    :created_at => Time.now
+  code = params['code']
+
+  body = {
+    code: code,
+    redirect_uri: url('oauth_callback'),
+    grant_type: 'authorization_code',
+    client_id: ENV['APP_KEY'],
+    client_secret: ENV['APP_SECRET']
+  }
+  url = "https://api.dropbox.com/1/oauth2/token"
+
+  uri = URI.parse(url)
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
+
+  request = Net::HTTP::Post.new(uri.request_uri)
+  request.body = URI.encode_www_form(body)
+
+  response = http.request(request)
+
+  resp_body = response.body
+  json = JSON.parse(resp_body.gsub('=>', ':'))
+  token = json['access_token']
+  user = json['account_id']
+
+  Token.first_or_create(
+    {:user  => user},
+    {:token => token,
+    :created_at => Time.now}
   )
 end
