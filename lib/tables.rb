@@ -11,6 +11,7 @@ class Dropbox
   property :id,         Serial
   property :path,       String,   :length => 255
   property :processed,  Boolean,  :default => false
+  property :user,       String,   :length => 255
   property :created_at, DateTime
   property :updated_at, DateTime
 end
