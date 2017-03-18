@@ -126,8 +126,9 @@ get '/oauth_callback' do
   user = json['account_id']
 
   Token.first_or_create(
-    {:user  => user},
+    {:user  => user,
     {:token => token,
     :created_at => Time.now}
   )
+  erb :connected
 end
