@@ -13,7 +13,7 @@ require File.expand_path('../lib/tables', __FILE__)
 set :bind, '0.0.0.0'
 Dotenv.load
 
-logger = Logger.new('./log/server.log', 'daily')
+logger = Logger.new('./logs/server.log', 'daily')
 logger.level = Logger::INFO
 logger.datetime_format = '%Y-%m-%d %H:%M:%S'
 
@@ -126,7 +126,7 @@ get '/oauth_callback' do
   user = json['account_id']
 
   Token.first_or_create(
-    {:user  => user,
+    {:user  => user},
     {:token => token,
     :created_at => Time.now}
   )
