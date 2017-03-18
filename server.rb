@@ -13,7 +13,7 @@ require File.expand_path('../lib/tables', __FILE__)
 set :bind, '0.0.0.0'
 Dotenv.load
 
-logger = Logger.new('captain-hook.log', 'daily')
+logger = Logger.new('./log/server.log', 'daily')
 logger.level = Logger::INFO
 logger.datetime_format = '%Y-%m-%d %H:%M:%S'
 

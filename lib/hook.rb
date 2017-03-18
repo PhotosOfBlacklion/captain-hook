@@ -20,9 +20,9 @@ class Hook
   def initialize
     Dotenv.load
 
-    @pidfile = './captain-hook.pid'
+    @pidfile = './pids/captain-hook.pid'
     @photos = []
-    @logger = Logger.new('captain-hook.log', 'daily')
+    @logger = Logger.new('./logs/hook.log', 'daily')
     @logger.level = Logger::INFO
     @logger.datetime_format = '%Y-%m-%d %H:%M:%S'
 
