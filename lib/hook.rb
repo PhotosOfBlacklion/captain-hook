@@ -40,8 +40,8 @@ class Hook
       album = Album.new(file.path)
       photo = Photo.new(file.path)
 
-      download(file.path, photo.title)
-      delete(file.path)
+      download(file.path, photo.title, photo.user)
+      delete(file.path, photo.user)
       create_thumbnail(photo.title)
       copy_to_s3(photo)
       delete_temp_files(photo.title)
@@ -129,7 +129,7 @@ class Hook
     end
   end
 
-  def download(source, target)
+  def download(source, target, user)
     @logger.info("Downloading and saving #{source} to be worked on")
     url = 'https://content.dropboxapi.com/2/files/download'
     uri = URI.parse(url)
@@ -138,8 +138,9 @@ class Hook
 
     request = Net::HTTP::Post.new(uri.request_uri)
 
+    token = Token.first(:user => user)
     request['Content-Type'] = ''
-    request['Authorization'] = "Bearer #{ENV['DROPBOX_ACCESS_TOKEN']}"
+    request['Authorization'] = "Bearer #{token}"
     request['Dropbox-API-Arg'] = '{"path":"' + source + '"}'
 
     response = http.request(request)
@@ -149,7 +150,7 @@ class Hook
     end
   end
 
-  def delete(path)
+  def delete(path, user)
     @logger.info("Deleting the photo from Dropbox")
     body = { path: "#{path}" }
     url = 'https://api.dropboxapi.com/2/files/delete'
@@ -160,8 +161,9 @@ class Hook
     request = Net::HTTP::Post.new(uri.request_uri)
     request.body = body.to_json
 
+    token = Token.first(:user => user)
     request['Content-Type'] = 'application/json'
-    request['Authorization'] = "Bearer #{ENV['DROPBOX_ACCESS_TOKEN']}"
+    request['Authorization'] = "Bearer #{token}"
 
     http.request(request)
   end
