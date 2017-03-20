@@ -40,8 +40,8 @@ class Hook
       album = Album.new(file.path)
       photo = Photo.new(file.path)
 
-      download(file.path, photo.title, photo.user)
-      delete(file.path, photo.user)
+      download(file.path, photo.title, file.user)
+      delete(file.path, file.user)
       create_thumbnail(photo.title)
       copy_to_s3(photo)
       delete_temp_files(photo.title)
@@ -138,7 +138,7 @@ class Hook
 
     request = Net::HTTP::Post.new(uri.request_uri)
 
-    token = Token.first(:user => user)
+    token = Token.first(:user => user).token
     request['Content-Type'] = ''
     request['Authorization'] = "Bearer #{token}"
     request['Dropbox-API-Arg'] = '{"path":"' + source + '"}'
@@ -161,7 +161,7 @@ class Hook
     request = Net::HTTP::Post.new(uri.request_uri)
     request.body = body.to_json
 
-    token = Token.first(:user => user)
+    token = Token.first(:user => user).token
     request['Content-Type'] = 'application/json'
     request['Authorization'] = "Bearer #{token}"
 

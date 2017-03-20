@@ -43,7 +43,7 @@ class POB < Sinatra::Base
     req_body = JSON.parse(request.body.read)
 
     account = req_body['list_folder']['accounts'].first
-    token = Token.first(:user => account)
+    token = Token.first(:user => account).token
 
     logger.info('Dropbox webhook fired')
     body = { path: '', recursive: true }
