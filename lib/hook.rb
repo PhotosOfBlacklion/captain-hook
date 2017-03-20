@@ -34,6 +34,7 @@ class Hook
   def run!
     check_pid
     write_pid
+    git_pull(@pages_dir)
 
     while file = get_file
       album = Album.new(file.path)
@@ -196,6 +197,12 @@ class Hook
       end
       f.puts '---'
     end
+  end
+
+  def git_pull(repo)
+    credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
+    repository = Rugged::Repository.discover(repo)
+    repository.fetch('origin', { credentials: credentials })
   end
 
   def commit
