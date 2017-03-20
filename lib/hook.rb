@@ -110,7 +110,7 @@ class Hook
         f.puts "---"
         f.puts "title: #{album.title}"
         f.puts "date: #{album.date}"
-        f.puts "thumbnail: #{photo.thumbnail}"
+        f.puts "thumbnail: #{contents['thumbnail']}"
         f.puts "photos:"
         contents['photos'].each do |p|
           f.puts "  - original: #{p['original']}"
