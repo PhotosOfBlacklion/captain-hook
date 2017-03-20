@@ -206,6 +206,11 @@ class Hook
     credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
     repository = Rugged::Repository.discover(repo)
     repository.fetch('origin', { credentials: credentials })
+
+    other_branch = repo.references['refs/remotes/origin/master']
+
+    repo.checkout_tree(other_branch.target)
+    repo.references.update(repo.head.resolve, other_branch.target_id)
   end
 
   def git_commit(repo)
