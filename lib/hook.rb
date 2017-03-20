@@ -36,9 +36,11 @@ class Hook
     write_pid
     git_pull(@pages_dir)
 
+    commit_files = []
     while file = get_file
       album = Album.new(file.path)
       photo = Photo.new(file.path)
+      commit_files << album.filename
 
       download(file.path, photo.title, file.user)
       delete(file.path, file.user)
@@ -46,9 +48,12 @@ class Hook
       copy_to_s3(photo)
       delete_temp_files(photo.title)
       add_photo(album, photo)
+      file.update(:processed => true, :updated_at => Time.now)
     end
 
-    git_commit(@pages_dir, album)
+    commit_files.each do |a|
+      git_commit(@pages_dir, a)
+    end
     git_push(@pages_dir)
   end
 
@@ -216,16 +221,20 @@ class Hook
   end
 
   def git_commit(repo, album)
+    /(?<commit_file>_posts\/.*)/ =~ album.filename
     repository = Rugged::Repository.discover(repo)
     index = repository.index
-    index.add_all(@pages_dir)
+    index.add(path: commit_file,
+              oid: (Rugged::Blob.from_workdir(repository, commit_file)),
+              mode: 0100644
+             )
     commit_tree = index.write_tree(repository)
     index.write
     commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
     Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
-                          message: "Adds a new gallery",
+                          message: "Adds #{album.title}",
                           parents: [repository.head.target],
                           tree: commit_tree,
                           update_ref: 'HEAD'
