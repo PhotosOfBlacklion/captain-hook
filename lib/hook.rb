@@ -13,8 +13,8 @@ require File.expand_path('../photo', __FILE__)
 include Magick
 
 class Hook
-  def self.run!(options)
-    Server.new(options).run!
+  def self.run!
+    Hook.new.run!
   end
 
   def initialize
@@ -48,7 +48,7 @@ class Hook
       add_photo(album, photo)
     end
 
-    git_commit(@pages_dir)
+    git_commit(@pages_dir, album)
     git_push(@pages_dir)
   end
 
@@ -209,27 +209,23 @@ class Hook
     repository = Rugged::Repository.discover(repo)
     repository.fetch('origin', { credentials: credentials })
 
-    other_branch = repo.references['refs/remotes/origin/master']
+    other_branch = repository.references['refs/remotes/origin/master']
 
-    repo.checkout_tree(other_branch.target)
-    repo.references.update(repo.head.resolve, other_branch.target_id)
+    repository.checkout_tree(other_branch.target)
+    repository.references.update(repository.head.resolve, other_branch.target_id)
   end
 
-  def git_commit(repo)
-    /(?<commit_file>_posts\/.*)/ =~ album_name
+  def git_commit(repo, album)
     repository = Rugged::Repository.discover(repo)
     index = repository.index
-    index.add(path: commit_file,
-              oid: (Rugged::Blob.from_workdir(repository, commit_file)),
-              mode: 0100644
-             )
+    index.add_all(@pages_dir)
     commit_tree = index.write_tree(repository)
     index.write
     commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
     Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
-                          message: "Adds #{title}",
+                          message: "Adds a new gallery",
                           parents: [repository.head.target],
                           tree: commit_tree,
                           update_ref: 'HEAD'
