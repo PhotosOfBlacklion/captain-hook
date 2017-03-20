@@ -91,6 +91,25 @@ class Hook
 
   def add_photo(album, photo)
     if album.exists?
+      contents = YAML.load(File.open(album.filename))
+      contents['photos'] << {
+        "original" => photo.original,
+        "thumbnail" => photo.thumbnail,
+        "title" => photo.title
+      }
+      File.open(album.filename, 'w') do |f|
+        f.puts "---"
+        f.puts "title: #{album.title}"
+        f.puts "date: #{album.date}"
+        f.puts "thumbnail: #{photo.thumbnail}"
+        f.puts "photos:"
+        contents['photos'].each do |p|
+          f.puts "  - original: #{p['original']}"
+          f.puts "    thumbnail: #{p['thumbnail']}"
+          f.puts "    title: #{p['title']}"
+        end
+        f.puts '---'
+      end
     else
       File.open(album.filename, 'w') do |f|
         f.puts "---"
