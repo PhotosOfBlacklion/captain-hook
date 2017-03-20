@@ -47,6 +47,9 @@ class Hook
       delete_temp_files(photo.title)
       add_photo(album, photo)
     end
+
+    git_commit(@pages_dir)
+    git_push(@pages_dir)
   end
 
   def write_pid
@@ -205,26 +208,30 @@ class Hook
     repository.fetch('origin', { credentials: credentials })
   end
 
-  def commit
+  def git_commit(repo)
     /(?<commit_file>_posts\/.*)/ =~ album_name
-    repo = Rugged::Repository.discover(@pages_dir)
-    index = repo.index
+    repository = Rugged::Repository.discover(repo)
+    index = repository.index
     index.add(path: commit_file,
-              oid: (Rugged::Blob.from_workdir(repo, commit_file)),
+              oid: (Rugged::Blob.from_workdir(repository, commit_file)),
               mode: 0100644
              )
-    commit_tree = index.write_tree(repo)
+    commit_tree = index.write_tree(repository)
     index.write
     commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
-    Rugged::Commit.create(repo,
+    Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
                           message: "Adds #{title}",
-                          parents: [repo.head.target],
+                          parents: [repository.head.target],
                           tree: commit_tree,
                           update_ref: 'HEAD'
                          )
+  end
+
+  def git_push(repo)
     credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
-    repo.push('origin', ['refs/heads/master'], {credentials: credentials})
+    repository = Rugged::Repository.discover(repo)
+    repository.push('origin', ['refs/heads/master'], {credentials: credentials})
   end
 end
