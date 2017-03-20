@@ -34,4 +34,8 @@ class Album
   def date
     @date ||= "#{filename.match(/(\d\d\d\d-\d\d-\d\d)-.*.md/)[1]} 12:00"
   end
+
+  def exists?
+    File.exists?(filename)
+  end
 end
