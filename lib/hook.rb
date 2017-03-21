@@ -227,7 +227,7 @@ class Hook
     Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
-                          message: "Adds #{album}",
+                          message: "Adds things to #{commit_file}",
                           parents: [repository.head.target],
                           tree: commit_tree,
                           update_ref: 'HEAD'
