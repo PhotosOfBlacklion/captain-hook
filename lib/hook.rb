@@ -51,7 +51,7 @@ class Hook
       file.update(:processed => true, :updated_at => Time.now)
     end
 
-    commit_files.each do |a|
+    commit_files.uniq.each do |a|
       git_commit(@pages_dir, a)
     end
     git_push(@pages_dir)
@@ -221,7 +221,7 @@ class Hook
   end
 
   def git_commit(repo, album)
-    /(?<commit_file>_posts\/.*)/ =~ album.filename
+    /(?<commit_file>_posts\/.*)/ =~ album
     repository = Rugged::Repository.discover(repo)
     index = repository.index
     index.add(path: commit_file,
