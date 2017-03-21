@@ -210,14 +210,7 @@ class Hook
   end
 
   def git_pull(repo)
-    credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
-    repository = Rugged::Repository.discover(repo)
-    repository.fetch('origin', { credentials: credentials })
-
-    other_branch = repository.references['refs/remotes/origin/master']
-
-    repository.checkout_tree(other_branch.target)
-    repository.references.update(repository.head.resolve, other_branch.target_id)
+    `cd #{repo} && git fetch && git pull`
   end
 
   def git_commit(repo, album)
@@ -234,7 +227,7 @@ class Hook
     Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
-                          message: "Adds #{album.title}",
+                          message: "Adds #{album}",
                           parents: [repository.head.target],
                           tree: commit_tree,
                           update_ref: 'HEAD'
