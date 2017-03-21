@@ -78,6 +78,8 @@ class POB < Sinatra::Base
     fork do
       exec './out.rb'
     end
+    pid = Process.fork
+    Process.detach(pid)
     logger.info('Dropbox webhook finished')
     ''
   end
