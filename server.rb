@@ -75,10 +75,7 @@ class POB < Sinatra::Base
     end unless json['entries'].empty?
 
     logger.info('Forking out to process things')
-    fork do
-      exec './out.rb'
-    end
-    pid = Process.fork
+    pid = fork { exec './out.rb' }
     Process.detach(pid)
     logger.info('Dropbox webhook finished')
     ''
