@@ -106,6 +106,11 @@ class Hook
         "thumbnail" => photo.thumbnail,
         "title" => photo.title
       }
+      # sort by file name
+      contents['photos'].sort_by! { |h| h['original'] }
+      # remove duplicates
+      contents['photos'].uniq! { |e| e['original'] }
+
       File.open(album.filename, 'w') do |f|
         f.puts "---"
         f.puts "title: #{album.title}"
