@@ -192,23 +192,6 @@ class Hook
     obj.upload_file("t_#{photo.title}")
   end
 
-  def create_jekyll_page
-    @logger.info("Creating the final Jekyll page")
-    File.open(album_name, 'w') do |f|
-      f.puts "---"
-      f.puts "title: #{title}"
-      f.puts "date: #{date}"
-      f.puts "thumbnail: #{thumbnail}"
-      f.puts "photos:"
-      @photos.flatten.each do |photo|
-        f.puts "  - original: #{photo['original']}"
-        f.puts "    thumbnail: #{photo['thumbnail']}"
-        f.puts "    title: #{photo['title']}"
-      end
-      f.puts '---'
-    end
-  end
-
   def git_pull(repo)
     `cd #{repo} && git fetch && git pull`
   end
