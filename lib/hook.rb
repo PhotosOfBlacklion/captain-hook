@@ -42,12 +42,24 @@ class Hook
       photo = Photo.new(file.path)
       commit_files << album.filename
 
-      download(file.path, photo.title, file.user)
+      begin
+        download(file.path, photo.title, file.user)
+      rescue
+        @logger.info("#{file.path} doesn't exist, skipping")
+        file.update(:processed => true, :updated_at => Time.now)
+        next
+      end
       delete(file.path, file.user)
-      create_thumbnail(photo.title)
-      copy_to_s3(photo)
-      delete_temp_files(photo.title)
-      add_photo(album, photo)
+      begin
+        create_thumbnail(photo.title)
+        copy_to_s3(photo)
+        delete_temp_files(photo.title)
+        add_photo(album, photo)
+      rescue
+        @logger.info("#{file.path} wasn't downloaded properly, skipping")
+        file.update(:processed => true, :updated_at => Time.now)
+        next
+      end
       file.update(:processed => true, :updated_at => Time.now)
     end
 
