@@ -3,7 +3,6 @@ class Photo
 
   def initialize(path)
     file = slugify(path)
-    p file
     /(?<year>\d\d\d\d)-(?<month>\d\d)-(\d\d)-(?<slug>.*)\/(?<filename>.*\.jpg)/ =~ file
     @year = year
     @month = month
