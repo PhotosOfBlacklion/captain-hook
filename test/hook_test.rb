@@ -22,7 +22,7 @@ class AlbumTest < CaptainHook::Test
     Dropbox.create(:path => '/2017-01-01-new-years/02-img.jpg')
     hook = Hook.new
     file = hook.get_file
-    assert file.path == "/2017-01-01-new-years/01-img.jpg",
-      "We picked up a processed file by mistake"
+    assert file.path == "/2017-01-01-new-years/02-img.jpg",
+      "We picked up a processed file by mistake #{file.path}"
   end
 end
