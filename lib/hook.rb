@@ -193,8 +193,8 @@ class Hook
   def create_thumbnail(photo)
     @logger.info("Creating the thumbnail")
     img = ImageList.new(photo)
-    thumb = img.change_geometry('200^') { |cols, rows, img|
-      img.resize!(cols, rows)
+    thumb = img.change_geometry('200^') { |cols, rows, image|
+      image.resize!(cols, rows)
     }.crop(CenterGravity, 0,0,200,200)
     thumb.write("t_#{photo}")
   end
