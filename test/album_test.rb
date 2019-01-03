@@ -17,7 +17,7 @@ class AlbumTest < CaptainHook::Test
   end
 
   def test_filename
-    assert @album.filename == "../PhotosOfBlacklion.github.io/_posts/2017-01-17-mike-test.md",
+    assert @album.filename == "../PhotosOfBlacklion.github.io/_posts/2017/2017-01-17-mike-test.md",
       "The album filename is wrong -- `#{@album.filename}`"
   end
 
@@ -32,7 +32,7 @@ class AlbumTest < CaptainHook::Test
 
     assert album.title == "Storm Doris Dismantles Pier At Lough Mac Nean Blacklion County Cavan",
       "The album title is wrong -- #{album.title}"
-    assert album.filename == "../PhotosOfBlacklion.github.io/_posts/2017-02-23-storm-doris-dismantles-pier-at-lough-mac-nean-blacklion-county-cavan.md",
+    assert album.filename == "../PhotosOfBlacklion.github.io/_posts/2017/2017-02-23-storm-doris-dismantles-pier-at-lough-mac-nean-blacklion-county-cavan.md",
       "The album filename is wrong -- #{album.filename}"
     assert album.date == "2017-02-23 12:00",
       "The ablbum date is wrong -- #{album.date}"

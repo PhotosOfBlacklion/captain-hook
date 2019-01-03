@@ -18,7 +18,7 @@ class Album
 
   def filename
     @posts_dir = "../PhotosOfBlacklion.github.io/_posts"
-    "#{@posts_dir}/#{@file}.md"
+    "#{@posts_dir}/#{year}/#{@file}.md"
   end
 
   def slug
@@ -29,6 +29,10 @@ class Album
     @title ||= slug.gsub(/\//, '-').gsub(/-/, ' ').gsub(/\w+/) do |word|
       word.capitalize
     end
+  end
+
+  def year
+    @year ||= "#{@file.match(/(\d\d\d\d)-\d\d-\d\d-.*/)[1]}"
   end
 
   def date
