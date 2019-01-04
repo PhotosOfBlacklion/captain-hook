@@ -15,4 +15,5 @@ group :test do
   gem 'rake'
   gem 'minitest'
   gem 'dm-sqlite-adapter'
+  gem 'simplecov'
 end
