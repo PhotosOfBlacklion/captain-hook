@@ -1,11 +1,11 @@
-require 'dm-mysql-adapter'
+require 'sequel'
 require 'dotenv'
 
 Dotenv.load
 
 DataMapper.setup(:default, "mysql://root@localhost/hooks")
 
-class Dropbox
+class Dropbox < Sequel::Model
   include DataMapper::Resource
 
   property :id,         Serial
@@ -15,7 +15,7 @@ class Dropbox
   property :created_at, DateTime
   property :updated_at, DateTime
 end
-class Token
+class Token < Sequel::Model
   include DataMapper::Resource
 
   property :id,         Serial

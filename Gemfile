@@ -7,12 +7,11 @@ gem 'dotenv'
 gem 'aws-sdk', '~> 2'
 gem 'rmagick'
 gem 'rugged'
-gem 'data_mapper'
-gem 'dm-mysql-adapter'
+gem 'sequel'
 gem 'unicorn'
 
 group :test do
   gem 'rake'
   gem 'minitest'
-  gem 'dm-sqlite-adapter'
+  gem 'sqlite3'
 end
