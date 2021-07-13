@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 class Photo
   attr_reader :processed
 
   def initialize(path)
     file = slugify(path)
-    /(?<year>\d\d\d\d)-(?<month>\d\d)-(\d\d)-(?<slug>.*)\/(?<filename>.*\.jpg)/ =~ file
+    %r{(?<year>\d\d\d\d)-(?<month>\d\d)-(\d\d)-(?<slug>.*)/(?<filename>.*\.jpg)} =~ file
     @year = year
     @month = month
     @slug = slug
@@ -12,13 +14,13 @@ class Photo
 
   def slugify(string)
     string
-    .gsub(/\s+/, '-')       # replace spaces with -
-    .gsub(/&/, '-and-')     # replace & with -and-
-    .gsub(/[^\w\-\/\.]+/, '') # replace all non-word chars except - and /
-    .gsub(/\-\-+/, '-')     # replace multiple - with single -
-    .gsub(/-\//, '/')       # remove - before a /
-    .gsub(/^-/, '')         # remove leading -
-    .gsub(/-$/, '')         # remove trailing -
+      .gsub(/\s+/, '-')       # replace spaces with -
+      .gsub(/&/, '-and-')     # replace & with -and-
+      .gsub(%r{[^\w\-/.]+}, '') # replace all non-word chars except - and /
+      .gsub(/--+/, '-') # replace multiple - with single -
+      .gsub(%r{-/}, '/') # remove - before a /
+      .gsub(/^-/, '')         # remove leading -
+      .gsub(/-$/, '')         # remove trailing -
   end
 
   def s3_path
@@ -34,6 +36,6 @@ class Photo
   end
 
   def title
-    @title ||= "#{@filename}"
+    @title ||= @filename.to_s
   end
 end

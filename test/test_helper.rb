@@ -1,6 +1,9 @@
-require "minitest/autorun"
-require "sequel"
-require "simplecov"
+# frozen_string_literal: true
+
+require 'minitest/autorun'
+
+require 'sequel'
+require 'simplecov'
 
 SimpleCov.start do
   add_filter '/vendor/'
@@ -9,9 +12,9 @@ end
 
 DB = Sequel.connect('sqlite://db/hook_test.db')
 
-require "./lib/album"
-require "./lib/hook"
-require "./lib/photo"
+require './lib/album'
+require './lib/hook'
+require './lib/photo'
 
 module CaptainHook
   class Test < MiniTest::Test

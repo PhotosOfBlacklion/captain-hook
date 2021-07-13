@@ -1,17 +1,20 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
-gem 'logger'
-gem 'sinatra'
-gem 'dotenv'
 gem 'aws-sdk', '~> 2'
+gem 'dotenv'
+gem 'logger'
 gem 'rmagick'
 gem 'rugged'
 gem 'sequel'
+gem 'sinatra'
 gem 'sqlite3'
 gem 'unicorn'
 
 group :test do
-  gem 'rake'
   gem 'minitest'
+  gem 'rake'
+  gem 'rubocop'
   gem 'simplecov'
 end
