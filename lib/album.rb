@@ -1,23 +1,24 @@
-class Album
+# frozen_string_literal: true
 
+class Album
   def initialize(path)
     @file = slugify(path.split('/')[1])
   end
 
   def slugify(string)
     string
-    .gsub(/\s+/, '-')       # replace spaces with -
-    .gsub(/&/, '-and-')     # replace & with -and-
-    .gsub(/[^\w\-\/]+/, '') # replace all non-word chars except - and /
-    .gsub(/\//, '-')        # replace / with -
-    .gsub(/\-\-+/, '-')     # replace multiple - with single -
-    .gsub(/-\//, '/')       # remove - before a /
-    .gsub(/^-/, '')         # remove leading -
-    .gsub(/-$/, '')         # remove trailing -
+      .gsub(/\s+/, '-')       # replace spaces with -
+      .gsub(/&/, '-and-')     # replace & with -and-
+      .gsub(%r{[^\w\-/]+}, '') # replace all non-word chars except - and /
+      .gsub(%r{/}, '-')        # replace / with -
+      .gsub(/--+/, '-') # replace multiple - with single -
+      .gsub(%r{-/}, '/') # remove - before a /
+      .gsub(/^-/, '')         # remove leading -
+      .gsub(/-$/, '')         # remove trailing -
   end
 
   def filename
-    @posts_dir = "../PhotosOfBlacklion.github.io/_posts"
+    @posts_dir = '../PhotosOfBlacklion.github.io/_posts'
     "#{@posts_dir}/#{year}/#{@file}.md"
   end
 
@@ -26,13 +27,11 @@ class Album
   end
 
   def title
-    @title ||= slug.gsub(/\//, '-').gsub(/-/, ' ').gsub(/\w+/) do |word|
-      word.capitalize
-    end
+    @title ||= slug.gsub(%r{/}, '-').gsub(/-/, ' ').gsub(/\w+/, &:capitalize)
   end
 
   def year
-    @year ||= "#{@file.match(/(\d\d\d\d)-\d\d-\d\d-.*/)[1]}"
+    @year ||= (@file.match(/(\d\d\d\d)-\d\d-\d\d-.*/)[1]).to_s
   end
 
   def date
@@ -40,6 +39,6 @@ class Album
   end
 
   def exists?
-    File.exists?(filename)
+    File.exist?(filename)
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'aws-sdk'
 require 'dotenv'
 require 'logger'
@@ -6,13 +8,13 @@ require 'rmagick'
 require 'rugged'
 require 'uri'
 require 'yaml'
-require File.expand_path('../album', __FILE__)
-require File.expand_path('../models/dropbox', __FILE__)
-require File.expand_path('../photo', __FILE__)
-
-include Magick
+require File.expand_path('album', __dir__)
+require File.expand_path('models/dropbox', __dir__)
+require File.expand_path('photo', __dir__)
 
 class Hook
+  include Magick
+
   def self.run!
     Hook.new.run!
   end
@@ -28,7 +30,6 @@ class Hook
 
     @bucket = 'photos-of-blacklion'
     @pages_dir = '../PhotosOfBlacklion.github.io/_posts'
-
   end
 
   def run!
@@ -44,9 +45,9 @@ class Hook
 
       begin
         download(file.path, photo.title, file.user)
-      rescue
+      rescue StandardError
         @logger.info("#{file.path} doesn't exist, skipping")
-        file.update(:processed => true, :updated_at => Time.now)
+        file.update(processed: true, updated_at: Time.now)
         next
       end
       delete(file.path, file.user)
@@ -55,12 +56,12 @@ class Hook
         copy_to_s3(photo)
         delete_temp_files(photo.title)
         add_photo(album, photo)
-      rescue
+      rescue StandardError
         @logger.info("#{file.path} wasn't downloaded properly, skipping")
-        file.update(:processed => true, :updated_at => Time.now)
+        file.update(processed: true, updated_at: Time.now)
         next
       end
-      file.update(:processed => true, :updated_at => Time.now)
+      file.update(processed: true, updated_at: Time.now)
     end
 
     commit_files.uniq.each do |a|
@@ -70,13 +71,11 @@ class Hook
   end
 
   def write_pid
-    begin
-      File.open(@pidfile, ::File::CREAT | ::File::EXCL | ::File::WRONLY){|f| f.write("#{Process.pid}") }
-      at_exit { File.delete(@pidfile) if File.exists?(@pidfile) }
-    rescue Errno::EEXIST
-      check_pid
-      retry
-    end
+    File.open(@pidfile, ::File::CREAT | ::File::EXCL | ::File::WRONLY) { |f| f.write(Process.pid.to_s) }
+    at_exit { File.delete(@pidfile) if File.exist?(@pidfile) }
+  rescue Errno::EEXIST
+    check_pid
+    retry
   end
 
   def check_pid
@@ -90,10 +89,12 @@ class Hook
   end
 
   def pid_status(pidfile)
-    return :exited unless File.exists?(pidfile)
+    return :exited unless File.exist?(pidfile)
+
     pid = ::File.read(pidfile).to_i
-    return :dead if pid == 0
-    Process.kill(0, pid)      # check process status
+    return :dead if pid.zero?
+
+    Process.kill(0, pid) # check process status
     :running
   rescue Errno::ESRCH
     :dead
@@ -102,21 +103,21 @@ class Hook
   end
 
   def get_file
-    Dropbox.first(:processed => false)
+    Dropbox.first(processed: false)
   end
 
   def delete_temp_files(photo)
-    @logger.info("Deleting local temporary files")
+    @logger.info('Deleting local temporary files')
     File.delete(photo, "t_#{photo}")
   end
 
   def add_photo(album, photo)
     if album.exists?
-      contents = YAML.load(File.open(album.filename))
+      contents = YAML.safe_load(File.open(album.filename))
       contents['photos'] << {
-        "original" => photo.original,
-        "thumbnail" => photo.thumbnail,
-        "title" => photo.title
+        'original' => photo.original,
+        'thumbnail' => photo.thumbnail,
+        'title' => photo.title
       }
       # sort by file name
       contents['photos'].sort_by! { |h| h['original'] }
@@ -124,11 +125,11 @@ class Hook
       contents['photos'].uniq! { |e| e['original'] }
 
       File.open(album.filename, 'w') do |f|
-        f.puts "---"
+        f.puts '---'
         f.puts "title: #{album.title}"
         f.puts "date: #{album.date}"
         f.puts "thumbnail: #{contents['thumbnail']}"
-        f.puts "photos:"
+        f.puts 'photos:'
         contents['photos'].each do |p|
           f.puts "  - original: #{p['original']}"
           f.puts "    thumbnail: #{p['thumbnail']}"
@@ -138,11 +139,11 @@ class Hook
       end
     else
       File.open(album.filename, 'w') do |f|
-        f.puts "---"
+        f.puts '---'
         f.puts "title: #{album.title}"
         f.puts "date: #{album.date}"
         f.puts "thumbnail: #{photo.thumbnail}"
-        f.puts "photos:"
+        f.puts 'photos:'
         f.puts "  - original: #{photo.original}"
         f.puts "    thumbnail: #{photo.thumbnail}"
         f.puts "    title: #{photo.title}"
@@ -160,10 +161,10 @@ class Hook
 
     request = Net::HTTP::Post.new(uri.request_uri)
 
-    token = Token.first(:user => user).token
+    token = Token.first(user: user).token
     request['Content-Type'] = ''
     request['Authorization'] = "Bearer #{token}"
-    request['Dropbox-API-Arg'] = '{"path":"' + source + '"}'
+    request['Dropbox-API-Arg'] = "{\"path\":\"#{source}\"}"
 
     response = http.request(request)
 
@@ -173,8 +174,8 @@ class Hook
   end
 
   def delete(path, user)
-    @logger.info("Deleting the photo from Dropbox")
-    body = { path: "#{path}" }
+    @logger.info('Deleting the photo from Dropbox')
+    body = { path: path.to_s }
     url = 'https://api.dropboxapi.com/2/files/delete'
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
@@ -183,7 +184,7 @@ class Hook
     request = Net::HTTP::Post.new(uri.request_uri)
     request.body = body.to_json
 
-    token = Token.first(:user => user).token
+    token = Token.first(user: user).token
     request['Content-Type'] = 'application/json'
     request['Authorization'] = "Bearer #{token}"
 
@@ -191,11 +192,11 @@ class Hook
   end
 
   def create_thumbnail(photo)
-    @logger.info("Creating the thumbnail")
+    @logger.info('Creating the thumbnail')
     img = ImageList.new(photo)
-    thumb = img.change_geometry('200^') { |cols, rows, image|
+    thumb = img.change_geometry('200^') do |cols, rows, image|
       image.resize!(cols, rows)
-    }.crop(CenterGravity, 0,0,200,200)
+    end.crop(CenterGravity, 0, 0, 200, 200)
     thumb.write("t_#{photo}")
   end
 
@@ -214,13 +215,12 @@ class Hook
   end
 
   def git_commit(repo, album)
-    /(?<commit_file>_posts\/.*)/ =~ album
+    %r{(?<commit_file>_posts/.*)} =~ album
     repository = Rugged::Repository.discover(repo)
     index = repository.index
     index.add(path: commit_file,
-              oid: (Rugged::Blob.from_workdir(repository, commit_file)),
-              mode: 0100644
-             )
+              oid: Rugged::Blob.from_workdir(repository, commit_file),
+              mode: 0o100644)
     commit_tree = index.write_tree(repository)
     index.write
     commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
@@ -230,13 +230,12 @@ class Hook
                           message: "Adds things to #{commit_file}",
                           parents: [repository.head.target],
                           tree: commit_tree,
-                          update_ref: 'HEAD'
-                         )
+                          update_ref: 'HEAD')
   end
 
   def git_push(repo)
-    credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV['GH_TOKEN'])
+    credentials = Rugged::Credentials::UserPassword.new(username: 'mgriffin', password: ENV['GH_TOKEN'])
     repository = Rugged::Repository.discover(repo)
-    repository.push('origin', ['refs/heads/master'], {credentials: credentials})
+    repository.push('origin', ['refs/heads/master'], { credentials: credentials })
   end
 end

@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'rubygems'
 require 'bundler/setup'
@@ -21,7 +22,7 @@ class POB < Sinatra::Base
 
   helpers do
     def valid_dropbox_request?(message)
-      digest = OpenSSL::Digest::SHA256.new
+      digest = OpenSSL::Digest.new('SHA256')
       signature = OpenSSL::HMAC.hexdigest(digest, ENV['APP_SECRET'], message)
       env['HTTP_X_DROPBOX_SIGNATURE'] == signature
     end
@@ -44,7 +45,7 @@ class POB < Sinatra::Base
     req_body = JSON.parse(request.body.read)
 
     account = req_body['list_folder']['accounts'].first
-    token = Token.first(:user => account).token
+    token = Token.first(user: account).token
 
     logger.info('Dropbox webhook fired')
     body = { path: '', recursive: true }
@@ -63,17 +64,19 @@ class POB < Sinatra::Base
 
     resp_body = response.body
     json = JSON.parse(resp_body.gsub('=>', ':'))
-    json['entries'].each do |entries|
-      if entries['.tag'] == 'file' && entries['path_lower'][-3..-1] == 'jpg'
+    unless json['entries'].empty?
+      json['entries'].each do |entries|
+        next unless entries['.tag'] == 'file' && entries['path_lower'][-3..-1] == 'jpg'
+
         file = Dropbox.first_or_create(
-          {:path       => entries['path_lower']},
-          {:user       => account,
-           :created_at => Time.now,
-           :updated_at => Time.now}
+          { path: entries['path_lower'] },
+          { user: account,
+            created_at: Time.now,
+            updated_at: Time.now }
         )
         logger.info("#{entries['path_lower']} added to the database")
       end
-    end unless json['entries'].empty?
+    end
 
     logger.info('Forking out to process things')
     pid = fork { exec './out.rb' }
@@ -88,16 +91,16 @@ class POB < Sinatra::Base
 
   get '/login' do
     params = {
-      :response_type => 'code',
-      :client_id => ENV['APP_KEY'],
-      :redirect_uri => url('oauth_callback')
+      response_type: 'code',
+      client_id: ENV['APP_KEY'],
+      redirect_uri: url('oauth_callback')
     }
-    query = params.map { |k, v| "#{k.to_s}=#{CGI.escape(v.to_s)}" }.join '&'
+    query = params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join '&'
     redirect "https://www.dropbox.com/1/oauth2/authorize?#{query}"
   end
 
   get '/oauth_callback' do
-    if params.has_key? 'error'
+    if params.key? 'error'
       # uh oh
       halt 401
     end
@@ -111,7 +114,7 @@ class POB < Sinatra::Base
       client_id: ENV['APP_KEY'],
       client_secret: ENV['APP_SECRET']
     }
-    url = "https://api.dropbox.com/1/oauth2/token"
+    url = 'https://api.dropbox.com/1/oauth2/token'
 
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
@@ -128,9 +131,9 @@ class POB < Sinatra::Base
     user = json['account_id']
 
     Token.first_or_create(
-      {:user  => user},
-      {:token => token,
-       :created_at => Time.now}
+      { user: user },
+      { token: token,
+        created_at: Time.now }
     )
     erb :connected
   end
