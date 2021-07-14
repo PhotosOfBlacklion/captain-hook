@@ -21,11 +21,3 @@ if [ -f "Gemfile" ]; then
   }
 fi
 
-/usr/bin/env ruby <<-EORUBY
-require 'rubygems'
-require 'bundler/setup'
-require 'dm-migrations'
-require File.expand_path('../lib/tables', __FILE__)
-
-DataMapper.auto_migrate!
-EORUBY

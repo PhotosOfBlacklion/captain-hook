@@ -2,3 +2,5 @@
 vendor/
 logs/
 pids/
+*.db
+coverage/
