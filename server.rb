@@ -105,8 +105,11 @@ class POB < Sinatra::Base
       halt 401
     end
 
+    halt 500 unless params.key? 'code'
+
     code = params['code']
 
+    # call dropbox oauth API
     body = {
       code: code,
       redirect_uri: url('oauth_callback'),

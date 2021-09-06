@@ -1,22 +1,18 @@
 # frozen_string_literal: true
 
+ENV['APP_ENV'] = 'test'
+
 require 'minitest/autorun'
-
+require 'rack/test'
 require 'sequel'
-require 'simplecov'
-
-SimpleCov.start do
-  add_filter '/vendor/'
-  add_filter '/test/'
-end
 
 DB = Sequel.connect('sqlite://db/hook_test.db')
 
 require './lib/album'
 require './lib/hook'
 require './lib/photo'
+require './server'
 
-module CaptainHook
-  class Test < MiniTest::Test
-  end
+class CaptainHookTest < MiniTest::Test
+  include Rack::Test::Methods
 end

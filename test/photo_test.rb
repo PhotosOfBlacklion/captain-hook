@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 
-class PhotoTest < CaptainHook::Test
+class PhotoTest < CaptainHookTest
   def setup
     path = '/2017-01-17-mike-test/img-01.jpg'
     @photo = Photo.new(path)

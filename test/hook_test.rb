@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 
-class AlbumTest < CaptainHook::Test
+class AlbumTest < CaptainHookTest
   def test_get_file
     Dropbox.insert(path: '/2017-01-01-new-years/01-img.jpg', processed: true)
     Dropbox.insert(path: '/2017-01-01-new-years/02-img.jpg')

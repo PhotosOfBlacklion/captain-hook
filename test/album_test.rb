@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 
-class AlbumTest < CaptainHook::Test
+class AlbumTest < CaptainHookTest
   def setup
     path = '/2017-01-17-mike-test/first.jpg'
     @album = Album.new(path)
