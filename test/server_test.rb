@@ -31,9 +31,26 @@ class ServerTest < CaptainHookTest
     assert last_response.status == 401, "Expected /oauth_callback?error to return 200, but got #{last_response.status}"
   end
 
-  def test_get_oauth_callback
+  def test_get_oauth_callback_fails_without_expected_code
     get '/oauth_callback'
 
     assert last_response.status == 500, "Expected /oauth_callback to return 500, but got #{last_response.status}"
+  end
+
+  def test_get_oauth_callback_with_code
+    json = '{
+      "access_token": "sl.AbX9y6Fe3AuH5o66-gmJpR032jwAwQPIVVzWXZNkdzcYT02akC2de219dZi6gxYPVnYPrpvISRSf9lxKWJzYLjtMPH-d9fo_0gXex7X37VIvpty4-G8f4-WX45AcEPfRnJJDwzv-",
+      "expires_in": "13220",
+      "token_type": "bearer",
+      "scope": "account_info.read files.content.read files.content.write files.metadata.read",
+      "account_id": "dbid:AAH4f99T0taONIb-OurWxbNQ6ywGRopQngc",
+      "uid": "12345"
+      }'
+    DropboxService.stub :oauth_api, json do
+      get '/oauth_callback?code=1234'
+
+      assert last_response.status == 200, "Expected /oauth_callback to return 200, but got #{last_response.status}"
+      assert_equal 1, Token.all.count
+    end
   end
 end

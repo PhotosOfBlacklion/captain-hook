@@ -10,6 +10,9 @@ require 'net/http'
 require 'uri'
 require 'logger'
 
+require_relative 'lib/dropbox_service'
+require_relative 'lib/models/token'
+
 class POB < Sinatra::Base
   set :bind, '0.0.0.0'
   Dotenv.load
@@ -110,34 +113,13 @@ class POB < Sinatra::Base
     code = params['code']
 
     # call dropbox oauth API
-    body = {
-      code: code,
-      redirect_uri: url('oauth_callback'),
-      grant_type: 'authorization_code',
-      client_id: ENV['APP_KEY'],
-      client_secret: ENV['APP_SECRET']
+    response = JSON.parse(DropboxService.oauth_api(code))
+    user  = response["account_id"]
+    token = response["access_token"]
+
+    Token.find_or_create(user: user) { |t|
+      t.token = token
     }
-    url = 'https://api.dropbox.com/1/oauth2/token'
-
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-
-    request = Net::HTTP::Post.new(uri.request_uri)
-    request.body = URI.encode_www_form(body)
-
-    response = http.request(request)
-
-    resp_body = response.body
-    json = JSON.parse(resp_body.gsub('=>', ':'))
-    token = json['access_token']
-    user = json['account_id']
-
-    Token.first_or_create(
-      { user: user },
-      { token: token,
-        created_at: Time.now }
-    )
     erb :connected
   end
 end

@@ -8,11 +8,15 @@ require 'sequel'
 
 DB = Sequel.connect('sqlite://db/hook_test.db')
 
-require './lib/album'
-require './lib/hook'
-require './lib/photo'
-require './server'
+require_relative '../lib/album'
+require_relative '../lib/hook'
+require_relative '../lib/photo'
+require_relative '../server'
 
 class CaptainHookTest < MiniTest::Test
   include Rack::Test::Methods
+
+  def teardown
+    [:tokens].each{|x| DB.from(x).truncate}
+  end
 end
