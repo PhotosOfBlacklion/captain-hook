@@ -71,7 +71,7 @@ GEM
       data_objects (= 0.10.17)
     dotenv (2.7.6)
     fastercsv (1.5.5)
-    jmespath (1.4.0)
+    jmespath (1.6.1)
     json (1.8.6)
     json_pure (1.8.6)
     kgio (2.11.4)
