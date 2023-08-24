@@ -6,8 +6,8 @@ require 'rmagick'
 require 'rugged'
 require 'uri'
 require 'yaml'
-require File.expand_path('../tables', __FILE__)
 require File.expand_path('../album', __FILE__)
+require File.expand_path('../models/dropbox', __FILE__)
 require File.expand_path('../photo', __FILE__)
 
 include Magick

@@ -8,11 +8,12 @@ require 'dotenv'
 require 'net/http'
 require 'uri'
 require 'logger'
-require File.expand_path('../lib/tables', __FILE__)
 
 class POB < Sinatra::Base
   set :bind, '0.0.0.0'
   Dotenv.load
+
+  @db = Sequel.connect(ENV['DATABASE_URL'])
 
   logger = Logger.new('./logs/server.log', 'daily')
   logger.level = Logger::INFO
