@@ -10,6 +10,7 @@ require 'net/http'
 require 'uri'
 require 'logger'
 
+require_relative 'lib/config'
 require_relative 'lib/dropbox_service'
 require_relative 'lib/models/token'
 
@@ -26,8 +27,8 @@ class POB < Sinatra::Base
   helpers do
     def valid_dropbox_request?(message)
       digest = OpenSSL::Digest.new('SHA256')
-      signature = OpenSSL::HMAC.hexdigest(digest, ENV['APP_SECRET'], message)
-      env['HTTP_X_DROPBOX_SIGNATURE'] == signature
+      signature = OpenSSL::HMAC.hexdigest(digest, Config.client_secret, message)
+      Config.signature == signature
     end
   end
 
@@ -41,7 +42,7 @@ class POB < Sinatra::Base
   end
 
   post '/' do
-    halt 400, 'Missing X-Dropbox-Signature' unless env['HTTP_X_DROPBOX_SIGNATURE']
+    halt 400, 'Missing X-Dropbox-Signature' unless Config.signature
     halt 403 unless valid_dropbox_request?(request.body.read)
 
     request.body.rewind
@@ -95,11 +96,11 @@ class POB < Sinatra::Base
   get '/login' do
     params = {
       response_type: 'code',
-      client_id: ENV['APP_KEY'],
+      client_id: Config.client_id,
       redirect_uri: url('oauth_callback')
     }
     query = params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join '&'
-    redirect "https://www.dropbox.com/1/oauth2/authorize?#{query}"
+    redirect "https://www.dropbox.com/oauth2/authorize?#{query}"
   end
 
   get '/oauth_callback' do

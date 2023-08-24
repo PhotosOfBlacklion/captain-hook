@@ -15,26 +15,26 @@ class ServerTest < CaptainHookTest
 
   def test_get_root_returns_200_with__challenge_parameter
     get '/?challenge=1234'
-    assert last_response.status == 200, "Expected /?challenge=1234 to be 200, but got #{last_response.status}"
+    assert_equal 200, last_response.status, "Expected /?challenge=1234 to be 200, but got #{last_response.status}"
   end
 
   def test_get_connect_returns_200
     get '/connect'
 
-    assert last_response.status == 200, "Expected /connect to return 200, but got #{last_response.status}"
+    assert_equal 200, last_response.status, "Expected /connect to return 200, but got #{last_response.status}"
     assert last_response.body.include?('Connect to Dropbox')
   end
 
   def test_get_oauth_callback_returns_401_on_error
     get '/oauth_callback?error'
 
-    assert last_response.status == 401, "Expected /oauth_callback?error to return 200, but got #{last_response.status}"
+    assert_equal 401, last_response.status, "Expected /oauth_callback?error to return 200, but got #{last_response.status}"
   end
 
   def test_get_oauth_callback_fails_without_expected_code
     get '/oauth_callback'
 
-    assert last_response.status == 500, "Expected /oauth_callback to return 500, but got #{last_response.status}"
+    assert_equal 500, last_response.status, "Expected /oauth_callback to return 500, but got #{last_response.status}"
   end
 
   def test_get_oauth_callback_with_code
@@ -51,6 +51,27 @@ class ServerTest < CaptainHookTest
 
       assert last_response.status == 200, "Expected /oauth_callback to return 200, but got #{last_response.status}"
       assert_equal 1, Token.all.count
+    end
+  end
+
+  def test_login
+    get '/login'
+
+    assert_equal 302, last_response.status
+    assert_equal "https://www.dropbox.com/oauth2/authorize?response_type=code&client_id=&redirect_uri=http%3A%2F%2Fexample.org%2Foauth_callback", last_response.location
+  end
+
+  def test_post_root_returns_400_without_dropbox_signature
+    post '/'
+
+    assert_equal 400, last_response.status
+  end
+
+  def test_post_root_returns_403_when_dropbox_signature_comparison_fails
+    Config.stub :signature, "deadbeef" do
+      post '/'
+
+      assert_equal 403, last_response.status
     end
   end
 end

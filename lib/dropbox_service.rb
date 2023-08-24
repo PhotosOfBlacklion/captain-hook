@@ -4,12 +4,12 @@ class DropboxService
   def self.oauth_api(code)
     body = {
       code: code,
-      redirect_uri: url('oauth_callback'),
+      redirect_uri: "https://hook.photosofblacklion.net/oauth_callback",
       grant_type: 'authorization_code',
-      client_id: ENV['APP_KEY'],
-      client_secret: ENV['APP_SECRET']
+      client_id: Config.client_id,
+      client_secret: Config.client_secret
     }
-    url = 'https://api.dropbox.com/1/oauth2/token'
+    url = 'https://api.dropbox.com/oauth2/token'
 
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
