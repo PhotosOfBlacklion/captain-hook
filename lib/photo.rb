@@ -14,13 +14,13 @@ class Photo
 
   def slugify(string)
     string
-      .gsub(/\s+/, '-')       # replace spaces with -
-      .gsub(/&/, '-and-')     # replace & with -and-
-      .gsub(%r{[^\w\-/.]+}, '') # replace all non-word chars except - and /
-      .gsub(/--+/, '-') # replace multiple - with single -
-      .gsub(%r{-/}, '/') # remove - before a /
-      .gsub(/^-/, '')         # remove leading -
-      .gsub(/-$/, '')         # remove trailing -
+      .gsub(/\s+/, "-")       # replace spaces with -
+      .gsub("&", "-and-")     # replace & with -and-
+      .gsub(%r{[^\w\-/.]+}, "") # replace all non-word chars except - and /
+      .gsub(/--+/, "-") # replace multiple - with single -
+      .gsub(%r{-/}, "/") # remove - before a /
+      .gsub(/^-/, "")         # remove leading -
+      .gsub(/-$/, "")         # remove trailing -
   end
 
   def s3_path

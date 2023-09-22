@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require 'aws-sdk'
-require 'dotenv'
-require 'logger'
-require 'net/http'
-require 'rmagick'
-require 'rugged'
-require 'uri'
-require 'yaml'
-require File.expand_path('album', __dir__)
-require File.expand_path('models/dropbox', __dir__)
-require File.expand_path('photo', __dir__)
+require "aws-sdk"
+require "dotenv"
+require "logger"
+require "net/http"
+require "rmagick"
+require "rugged"
+require "uri"
+require "yaml"
+require File.expand_path("album", __dir__)
+require File.expand_path("models/dropbox", __dir__)
+require File.expand_path("photo", __dir__)
 
 class Hook
   include Magick
@@ -22,14 +22,14 @@ class Hook
   def initialize
     Dotenv.load
 
-    @pidfile = './pids/captain-hook.pid'
+    @pidfile = "./pids/captain-hook.pid"
     @photos = []
-    @logger = Logger.new('./logs/hook.log', 'daily')
+    @logger = Logger.new("./logs/hook.log", "daily")
     @logger.level = Logger::INFO
-    @logger.datetime_format = '%Y-%m-%d %H:%M:%S'
+    @logger.datetime_format = "%Y-%m-%d %H:%M:%S"
 
-    @bucket = 'photos-of-blacklion'
-    @pages_dir = '../PhotosOfBlacklion.github.io/_posts'
+    @bucket = "photos-of-blacklion"
+    @pages_dir = "../PhotosOfBlacklion.github.io/_posts"
   end
 
   def run!
@@ -107,76 +107,76 @@ class Hook
   end
 
   def delete_temp_files(photo)
-    @logger.info('Deleting local temporary files')
+    @logger.info("Deleting local temporary files")
     File.delete(photo, "t_#{photo}")
   end
 
   def add_photo(album, photo)
     if album.exists?
       contents = YAML.safe_load(File.open(album.filename))
-      contents['photos'] << {
-        'original' => photo.original,
-        'thumbnail' => photo.thumbnail,
-        'title' => photo.title
+      contents["photos"] << {
+        "original" => photo.original,
+        "thumbnail" => photo.thumbnail,
+        "title" => photo.title
       }
       # sort by file name
-      contents['photos'].sort_by! { |h| h['original'] }
+      contents["photos"].sort_by! { |h| h["original"] }
       # remove duplicates
-      contents['photos'].uniq! { |e| e['original'] }
+      contents["photos"].uniq! { |e| e["original"] }
 
-      File.open(album.filename, 'w') do |f|
-        f.puts '---'
+      File.open(album.filename, "w") do |f|
+        f.puts "---"
         f.puts "title: #{album.title}"
         f.puts "date: #{album.date}"
         f.puts "thumbnail: #{contents['thumbnail']}"
-        f.puts 'photos:'
-        contents['photos'].each do |p|
+        f.puts "photos:"
+        contents["photos"].each do |p|
           f.puts "  - original: #{p['original']}"
           f.puts "    thumbnail: #{p['thumbnail']}"
           f.puts "    title: #{p['title']}"
         end
-        f.puts '---'
+        f.puts "---"
       end
     else
-      File.open(album.filename, 'w') do |f|
-        f.puts '---'
+      File.open(album.filename, "w") do |f|
+        f.puts "---"
         f.puts "title: #{album.title}"
         f.puts "date: #{album.date}"
         f.puts "thumbnail: #{photo.thumbnail}"
-        f.puts 'photos:'
+        f.puts "photos:"
         f.puts "  - original: #{photo.original}"
         f.puts "    thumbnail: #{photo.thumbnail}"
         f.puts "    title: #{photo.title}"
-        f.puts '---'
+        f.puts "---"
       end
     end
   end
 
   def download(source, target, user)
     @logger.info("Downloading and saving #{source} to be worked on")
-    url = 'https://content.dropboxapi.com/2/files/download'
+    url = "https://content.dropboxapi.com/2/files/download"
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
 
     request = Net::HTTP::Post.new(uri.request_uri)
 
-    token = Token.first(user: user).token
-    request['Content-Type'] = ''
-    request['Authorization'] = "Bearer #{token}"
-    request['Dropbox-API-Arg'] = "{\"path\":\"#{source}\"}"
+    token = Token.first(user:).token
+    request["Content-Type"] = ""
+    request["Authorization"] = "Bearer #{token}"
+    request["Dropbox-API-Arg"] = "{\"path\":\"#{source}\"}"
 
     response = http.request(request)
 
-    File.open(target, 'w') do |f|
+    File.open(target, "w") do |f|
       f.puts response.body
     end
   end
 
   def delete(path, user)
-    @logger.info('Deleting the photo from Dropbox')
+    @logger.info("Deleting the photo from Dropbox")
     body = { path: path.to_s }
-    url = 'https://api.dropboxapi.com/2/files/delete'
+    url = "https://api.dropboxapi.com/2/files/delete"
     uri = URI.parse(url)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -184,17 +184,17 @@ class Hook
     request = Net::HTTP::Post.new(uri.request_uri)
     request.body = body.to_json
 
-    token = Token.first(user: user).token
-    request['Content-Type'] = 'application/json'
-    request['Authorization'] = "Bearer #{token}"
+    token = Token.first(user:).token
+    request["Content-Type"] = "application/json"
+    request["Authorization"] = "Bearer #{token}"
 
     http.request(request)
   end
 
   def create_thumbnail(photo)
-    @logger.info('Creating the thumbnail')
+    @logger.info("Creating the thumbnail")
     img = ImageList.new(photo)
-    thumb = img.change_geometry('200^') do |cols, rows, image|
+    thumb = img.change_geometry("200^") do |cols, rows, image|
       image.resize!(cols, rows)
     end.crop(CenterGravity, 0, 0, 200, 200)
     thumb.write("t_#{photo}")
@@ -202,7 +202,7 @@ class Hook
 
   def copy_to_s3(photo)
     @logger.info("Copying #{photo.title} to s3://#{@bucket}/#{photo.s3_path}.")
-    s3 = Aws::S3::Resource.new(region: 'eu-west-1')
+    s3 = Aws::S3::Resource.new(region: "eu-west-1")
     obj = s3.bucket(@bucket).object(photo.s3_path)
     obj.upload_file(photo.title)
     @logger.info("Copying t_#{photo.title} to s3://#{@bucket}/t/#{photo.s3_path}.")
@@ -223,19 +223,19 @@ class Hook
               mode: 0o100644)
     commit_tree = index.write_tree(repository)
     index.write
-    commit_author = { email: 'hook@mikegriffin.ie', name: 'Captain Hook', time: Time.now }
+    commit_author = { email: "hook@mikegriffin.ie", name: "Captain Hook", time: Time.now }
     Rugged::Commit.create(repository,
                           author: commit_author,
                           committer: commit_author,
                           message: "Adds things to #{commit_file}",
                           parents: [repository.head.target],
                           tree: commit_tree,
-                          update_ref: 'HEAD')
+                          update_ref: "HEAD")
   end
 
   def git_push(repo)
-    credentials = Rugged::Credentials::UserPassword.new(username: 'mgriffin', password: ENV['GH_TOKEN'])
+    credentials = Rugged::Credentials::UserPassword.new(username: "mgriffin", password: ENV["GH_TOKEN"])
     repository = Rugged::Repository.discover(repo)
-    repository.push('origin', ['refs/heads/master'], { credentials: credentials })
+    repository.push("origin", ["refs/heads/master"], { credentials: })
   end
 end

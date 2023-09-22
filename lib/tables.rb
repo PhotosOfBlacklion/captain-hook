@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'sequel'
-require 'dotenv'
+require "sequel"
+require "dotenv"
 
 Dotenv.load
 
-DataMapper.setup(:default, 'mysql://root@localhost/hooks')
+DataMapper.setup(:default, "mysql://root@localhost/hooks")
 
 class Dropbox < Sequel::Model
   include DataMapper::Resource
