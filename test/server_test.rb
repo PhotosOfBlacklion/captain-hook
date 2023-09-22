@@ -74,4 +74,23 @@ class ServerTest < CaptainHookTest
       assert_equal 403, last_response.status
     end
   end
+
+  def test_post_root_returns
+    stub_request(:post, "https://api.dropboxapi.com/2/files/list_folder").
+      with(
+        headers: {
+          'Authorization'=>'Bearer deadbeef',
+          'Content-Type'=>'application/json',
+        }).
+        to_return(status: 200, body: '{"entries"=>[]}')
+
+    DB.transaction(rollback: :always, auto_savepoint: true) do
+      Token.create(user: "troz", token: "deadbeef")
+      Config.stub :signature, "3318b3cd3f70641fe506b85458f368bdef213395221fbfa9585c7aa1c5008663" do
+        post '/', JSON.generate(list_folder: { accounts: [ "troz" ] })
+
+        assert_equal 200, last_response.status
+      end
+    end
+  end
 end

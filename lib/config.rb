@@ -13,4 +13,12 @@ module Config
   def self.client_id
     @client_id ||= ENV['APP_KEY']
   end
+
+  def self.database_url
+    @database_url ||= ENV['DATABASE_URL']
+  end
+
+  def self.db
+    @db ||= Sequel.connect(Config.database_url)
+  end
 end

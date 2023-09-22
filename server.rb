@@ -18,7 +18,7 @@ class POB < Sinatra::Base
   set :bind, '0.0.0.0'
   Dotenv.load
 
-  @db = Sequel.connect(ENV['DATABASE_URL'])
+  @db = Sequel.connect(Config.database_url)
 
   logger = Logger.new('./logs/server.log', 'daily')
   logger.level = Logger::INFO
@@ -28,6 +28,7 @@ class POB < Sinatra::Base
     def valid_dropbox_request?(message)
       digest = OpenSSL::Digest.new('SHA256')
       signature = OpenSSL::HMAC.hexdigest(digest, Config.client_secret, message)
+      p signature
       Config.signature == signature
     end
   end
