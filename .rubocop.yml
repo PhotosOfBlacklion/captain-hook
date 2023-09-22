@@ -1,0 +1,9 @@
+AllCops:
+  NewCops: enable
+inherit_gem:
+  rubocop-github:
+    - config/default.yml
+require:
+  - rubocop-minitest
+  - rubocop-rake
+  - rubocop-sequel
